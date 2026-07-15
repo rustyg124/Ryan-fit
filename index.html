@@ -58,7 +58,7 @@ details{background:var(--card2);padding:11px;border-radius:12px;margin-top:9px}s
 <div id="app">
   <header>
     <div><h1>RyanFit</h1><p>Coach • recover • rebuild</p></div>
-<span style="font-size:.72rem;color:#aeb9c7;background:#212a35;padding:6px 9px;border-radius:999px">v1.4</span>
+<span style="font-size:.72rem;color:#aeb9c7;background:#212a35;padding:6px 9px;border-radius:999px">v1.4.1</span>
     <button id="voiceToggle" class="icon-btn" aria-label="Toggle spoken coach">🔊</button>
   </header>
 
@@ -290,23 +290,57 @@ const EMPTY={checkins:[],sets:[],body:[],completed:[],activeSession:null,setting
 const clone=x=>JSON.parse(JSON.stringify(x));
 function load(){try{return JSON.parse(localStorage.getItem("ryanfit_coach_v1"))||clone(EMPTY)}catch(e){return clone(EMPTY)}}
 let state=load(), activeWorkout=null, queue=[], exerciseIndex=0, setIndex=1, selectedSetPain=0, timer=null, seconds=90, setTimerInt=null, setSeconds=0, setActive=false;
+state.settings=Object.assign({
+  voice:true,
+  rest:90,
+  voiceName:"",
+  voiceStyle:"calm",
+  guideInterval:60,
+  fullGuidance:true,
+  motivation:true
+},state.settings||{});
+save();
 const $=id=>document.getElementById(id);
 function save(){try{localStorage.setItem("ryanfit_coach_v1",JSON.stringify(state))}catch(e){}}
 function toast(msg="Saved"){const t=$("toast");t.textContent=msg;t.classList.add("show");setTimeout(()=>t.classList.remove("show"),1300)}
 let availableVoices=[],guideTimer=null,exerciseStartedAt=0,lastPrevious=null;
 function refreshVoices(){
-  if(!("speechSynthesis" in window))return;
-  availableVoices=speechSynthesis.getVoices();
+  if(!("speechSynthesis" in window)){
+    $("voiceSelect").innerHTML='<option value="">System default voice</option>';
+    return;
+  }
+  availableVoices=speechSynthesis.getVoices()||[];
   const english=availableVoices.filter(v=>/^en/i.test(v.lang));
   const list=english.length?english:availableVoices;
-  $("voiceSelect").innerHTML=list.map(v=>`<option value="${v.name}">${v.name} · ${v.lang}${v.default?" · default":""}</option>`).join("");
-  if(state.settings.voiceName && list.some(v=>v.name===state.settings.voiceName))$("voiceSelect").value=state.settings.voiceName;
-  else{
+  const options=['<option value="">System default voice</option>'];
+  for(const v of list){
+    options.push(`<option value="${v.name}">${v.name} · ${v.lang}${v.default?" · default":""}</option>`);
+  }
+  $("voiceSelect").innerHTML=options.join("");
+  if(state.settings.voiceName && list.some(v=>v.name===state.settings.voiceName)){
+    $("voiceSelect").value=state.settings.voiceName;
+  }else{
     const irish=list.find(v=>/en-IE/i.test(v.lang)||/irish/i.test(v.name));
     const au=list.find(v=>/en-AU/i.test(v.lang));
-    const pick=irish||au||list[0];
-    if(pick){$("voiceSelect").value=pick.name;state.settings.voiceName=pick.name;save()}
+    const pick=irish||au||null;
+    if(pick){
+      $("voiceSelect").value=pick.name;
+      state.settings.voiceName=pick.name;
+    }else{
+      $("voiceSelect").value="";
+      state.settings.voiceName="";
+    }
+    save();
   }
+}
+function unlockAndRefreshVoices(){
+  if(!("speechSynthesis" in window))return;
+  const unlock=new SpeechSynthesisUtterance(" ");
+  unlock.volume=0;
+  speechSynthesis.speak(unlock);
+  setTimeout(refreshVoices,100);
+  setTimeout(refreshVoices,500);
+  setTimeout(refreshVoices,1200);
 }
 function speak(text,force=false){
  if((!state.settings.voice&&!force) || !("speechSynthesis" in window))return;
@@ -317,10 +351,11 @@ function speak(text,force=false){
  u.pitch=style==="gruff"?.72:style==="direct"?.92:1;
  u.volume=1;
  const chosen=availableVoices.find(v=>v.name===state.settings.voiceName);
- if(chosen)u.voice=chosen;
+ if(chosen)u.voice=chosen; // otherwise iPhone uses its system web-speech default
  speechSynthesis.speak(u);
 }
 if("speechSynthesis" in window){
+ document.addEventListener("pointerdown",unlockAndRefreshVoices,{once:true});
  refreshVoices();showQuote();renderResume();
  speechSynthesis.onvoiceschanged=refreshVoices;
  setTimeout(refreshVoices,400);
@@ -399,11 +434,15 @@ function buildSelect(){
  $("workoutSelect").innerHTML=WEEK.map(([day,id])=>`<option value="${id}">${day} · ${WORKOUTS[id].title}</option>`).join("");
  $("workoutSelect").value=scheduledId();
 }
+$("voiceSelect").addEventListener("pointerdown",unlockAndRefreshVoices);
 $("voiceSelect").onchange=()=>{state.settings.voiceName=$("voiceSelect").value;save();speak("Voice selected. I will use this voice for your coaching.",true)};
 $("voiceStyle").onchange=()=>{state.settings.voiceStyle=$("voiceStyle").value;save();speak("Speaking style updated.",true)};
 $("guideInterval").onchange=()=>{state.settings.guideInterval=+$("guideInterval").value;save();restartGuidance()};
 $("fullGuidance").onchange=()=>{state.settings.fullGuidance=$("fullGuidance").checked;save();restartGuidance();toast(state.settings.fullGuidance?"Full guidance on":"Full guidance off")};
-$("testVoice").onclick=()=>speak("Morning Ryan. This is your selected RyanFit coach voice. Smooth movement, steady effort, and we will build from there.",true);
+$("testVoice").onclick=()=>{
+ unlockAndRefreshVoices();
+ setTimeout(()=>speak("Morning Ryan. Your coach is active. Smooth movement, steady effort, and we will build from there.",true),250);
+};
 $("pain").oninput=e=>$("painLabel").textContent=e.target.value;
 $("coachPlan").onclick=()=>{
  const pain=+$("pain").value,range=$("range").value,energy=$("energy").value,sleep=$("sleep").value;
@@ -571,7 +610,7 @@ $("resumeWorkout").onclick=resumeSavedWorkout;
 $("discardResume").onclick=()=>{if(confirm("Discard the saved in-progress workout?")){clearSession();renderResume();toast("Saved workout discarded")}};
 buildSelect();renderHome();renderPlan();renderMachines();renderProgress();
 $("voiceToggle").textContent=state.settings.voice?"🔊":"🔇";$("voiceState").textContent=state.settings.voice?"On":"Off";
-$("voiceStyle").value=state.settings.voiceStyle||"calm";$("guideInterval").value=state.settings.guideInterval||60;$("fullGuidance").checked=state.settings.fullGuidance!==false;
+$("voiceStyle").value=state.settings.voiceStyle||"calm";$("guideInterval").value=state.settings.guideInterval||60;$("fullGuidance").checked=state.settings.fullGuidance!==false;$("voiceState").textContent=state.settings.voice?"On":"Off";
 refreshVoices();
 
 function updateMediaSession(){

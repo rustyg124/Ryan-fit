@@ -1,16 +1,16 @@
-# RyanFit v1.4 Resume + Headset Controls
+# RyanFit v1.4.1 Voice Fix
 
 Upload and replace:
-index.html, sw.js, manifest.webmanifest, icon files, .nojekyll
+- index.html
+- sw.js
+- manifest.webmanifest
+- icon-192.png
+- icon-512.png
+- .nojekyll
 
-Features:
-- Active workout saved continuously
-- Resume card after crash, reload or interruption
-- Rest/set timers restored
-- Weight, reps and shoulder response restored
-- Bluetooth/media play-pause handlers where Safari exposes them
-- Next-track attempts to finish an active set
-- Previous-track repeats current guidance
-- Occasional motivational quotes
-
-Bluetooth control availability depends on iPhone, Safari and headset implementation.
+Fixes:
+- System Default Voice is always available
+- iPhone voice list retries after user interaction
+- Voice works even if Safari exposes no named voices
+- Old saved settings are migrated
+- Full hands-free guidance defaults back to ON
