@@ -1,4 +1,4 @@
-const CACHE='ryanfit-v1-3-setflow';
+const CACHE='ryanfit-v1-4-resume-media';
 const ASSETS=["./", "./index.html", "./manifest.webmanifest", "./icon-192.png", "./icon-512.png", "./arm_machine.jpg", "./assisted_chin.jpg", "./bench.jpg", "./calf_raise.jpg", "./functional_trainer.jpg", "./glute_machine.jpg", "./hip_abductor.jpg", "./lat_pulldown.jpg", "./leg_curl.jpg", "./leg_extension.jpg", "./leg_press.jpg", "./multi_press.jpg", "./pec_deck.jpg", "./plate_leg_press.jpg", "./smith.jpg", "./stairmill.jpg", "./treadmill.jpg"];
 self.addEventListener('install',e=>{e.waitUntil(caches.open(CACHE).then(c=>c.addAll(ASSETS)));self.skipWaiting()});
 self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k!==CACHE).map(k=>caches.delete(k)))));self.clients.claim()});

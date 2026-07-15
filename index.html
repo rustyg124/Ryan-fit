@@ -46,6 +46,11 @@ details{background:var(--card2);padding:11px;border-radius:12px;margin-top:9px}s
 .countdown-overlay{position:fixed;inset:0;background:rgba(5,8,12,.88);display:none;align-items:center;justify-content:center;z-index:50}
 .countdown-overlay.show{display:flex}
 #countdownNumber{font-size:8rem;font-weight:900;color:var(--accent)}
+
+.resume-card{border:1px solid rgba(111,221,169,.45);background:linear-gradient(145deg,#183025,#15231d)}
+.resume-grid{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center}
+.quote{font-style:italic;color:#dff9ea;padding:12px;background:#14231c;border-radius:12px;border-left:4px solid var(--accent)}
+.media-hint{font-size:.78rem;color:var(--muted);margin-top:8px}
 </style>
   <title>RyanFit Coach</title>
 </head>
@@ -53,7 +58,7 @@ details{background:var(--card2);padding:11px;border-radius:12px;margin-top:9px}s
 <div id="app">
   <header>
     <div><h1>RyanFit</h1><p>Coach • recover • rebuild</p></div>
-<span style="font-size:.72rem;color:#aeb9c7;background:#212a35;padding:6px 9px;border-radius:999px">v1.3</span>
+<span style="font-size:.72rem;color:#aeb9c7;background:#212a35;padding:6px 9px;border-radius:999px">v1.4</span>
     <button id="voiceToggle" class="icon-btn" aria-label="Toggle spoken coach">🔊</button>
   </header>
 
@@ -67,6 +72,18 @@ details{background:var(--card2);padding:11px;border-radius:12px;margin-top:9px}s
           <div><span>Phase</span><strong>Shoulder rebuild</strong></div>
           <div><span>Goal</span><strong>Lose 7 kg</strong></div>
         </div>
+      </article>
+
+      <article id="resumeCard" class="card resume-card" style="display:none">
+        <div class="resume-grid">
+          <div>
+            <span class="eyebrow">Interrupted workout found</span>
+            <h3 id="resumeTitle">Resume workout</h3>
+            <p id="resumeDetail" class="muted"></p>
+          </div>
+          <button id="discardResume" class="quiet">Discard</button>
+        </div>
+        <button id="resumeWorkout" class="primary full">Continue where I stopped</button>
       </article>
 
       <article class="card">
@@ -117,6 +134,7 @@ details{background:var(--card2);padding:11px;border-radius:12px;margin-top:9px}s
           <div><strong id="weightChange">—</strong><span>weight change</span></div>
         </div>
         <p id="accountabilityMessage" class="muted"></p>
+        <div id="motivationQuote" class="quote"></div>
       </article>
     </section>
 
@@ -268,7 +286,7 @@ const WEEK=[
 </script>
 <script>
 
-const EMPTY={checkins:[],sets:[],body:[],completed:[],settings:{voice:true,rest:90,voiceName:"",voiceStyle:"calm",guideInterval:60,fullGuidance:true}};
+const EMPTY={checkins:[],sets:[],body:[],completed:[],activeSession:null,settings:{voice:true,rest:90,voiceName:"",voiceStyle:"calm",guideInterval:60,fullGuidance:true,motivation:true}};
 const clone=x=>JSON.parse(JSON.stringify(x));
 function load(){try{return JSON.parse(localStorage.getItem("ryanfit_coach_v1"))||clone(EMPTY)}catch(e){return clone(EMPTY)}}
 let state=load(), activeWorkout=null, queue=[], exerciseIndex=0, setIndex=1, selectedSetPain=0, timer=null, seconds=90, setTimerInt=null, setSeconds=0, setActive=false;
@@ -303,11 +321,67 @@ function speak(text,force=false){
  speechSynthesis.speak(u);
 }
 if("speechSynthesis" in window){
- refreshVoices();
+ refreshVoices();showQuote();renderResume();
  speechSynthesis.onvoiceschanged=refreshVoices;
  setTimeout(refreshVoices,400);
 }
 function todayISO(){return new Date().toISOString().slice(0,10)}
+const QUOTES=[
+ "The goal today is not perfection. It is one controlled session.",
+ "Smooth repetitions build the strength that rushed repetitions borrow.",
+ "You do not need to feel motivated before you begin. Beginning creates momentum.",
+ "Protect the repair, train what you can, and let consistency do the heavy lifting.",
+ "A lighter set completed well is progress. A heavier set completed badly is noise.",
+ "Your future strength is being built by today's patient work.",
+ "One good decision, then the next one.",
+ "Discipline is making the next useful choice without needing drama.",
+ "You are not starting over. You are rebuilding with experience.",
+ "Finish the session you planned, not the session your ego imagined."
+];
+function showQuote(forceSpeak=false){
+ const seed=new Date().getDate()+state.sets.length+state.completed.length;
+ const quote=QUOTES[seed%QUOTES.length];
+ $("motivationQuote").textContent=`“${quote}”`;
+ if(forceSpeak&&state.settings.motivation!==false)speak(quote);
+}
+function snapshotSession(){
+ if(!activeWorkout||!queue.length)return;
+ state.activeSession={
+   savedAt:new Date().toISOString(),activeWorkout,queue,exerciseIndex,setIndex,selectedSetPain,
+   seconds,setSeconds,setActive,isResting:!!timer,
+   weight:$("setWeight")?.value||"",reps:$("setReps")?.value||""
+ };
+ save();
+ updateMediaSession();
+}
+function clearSession(){state.activeSession=null;save()}
+function renderResume(){
+ const s=state.activeSession,card=$("resumeCard");
+ if(!s||!WORKOUTS[s.activeWorkout]){card.style.display="none";return}
+ const item=s.queue?.[s.exerciseIndex],m=item&&MACHINES.find(x=>x.id===item[0]);
+ card.style.display="block";
+ $("resumeTitle").textContent=WORKOUTS[s.activeWorkout].title;
+ $("resumeDetail").textContent=`${m?.name||"Workout"} · set ${s.setIndex} · saved ${new Date(s.savedAt).toLocaleTimeString([], {hour:"2-digit",minute:"2-digit"})}`;
+}
+function resumeSavedWorkout(){
+ const s=state.activeSession;if(!s)return;
+ activeWorkout=s.activeWorkout;queue=s.queue;exerciseIndex=s.exerciseIndex||0;setIndex=s.setIndex||1;
+ selectedSetPain=s.selectedSetPain||0;seconds=Number.isFinite(s.seconds)?s.seconds:(state.settings.rest||90);
+ setSeconds=s.setSeconds||0;setActive=!!s.setActive;
+ showPage("workoutPage");renderExercise(true);
+ $("setWeight").value=s.weight||"";$("setReps").value=s.reps||"";
+ if(setActive){
+   $("startSet").style.display="none";$("finishSet").style.display="block";drawSetTimer();
+   setTimerInt=setInterval(()=>{setSeconds++;drawSetTimer();snapshotSession()},1000);
+ }else if(s.isResting&&seconds>0){
+   resumeRestTimer();
+ }
+ speak(`Workout resumed. ${MACHINES.find(x=>x.id===queue[exerciseIndex][0]).name}, set ${setIndex}.`);
+}
+function resumeRestTimer(){
+ clearInterval(timer);$("restButton").textContent="Pause";drawTimer();
+ timer=setInterval(()=>{seconds--;drawTimer();snapshotSession();if(seconds===30)speak("Thirty seconds.");if(seconds===10)speak("Ten seconds.");if(seconds<=0){clearInterval(timer);timer=null;snapshotSession();speak("Rest complete. Press start set when ready.")}},1000);
+}
 function scheduledId(){return WEEK[(new Date().getDay()+6)%7][1]}
 function renderHome(){
  const d=new Date();$("todayDate").textContent=d.toLocaleDateString(undefined,{weekday:"long",day:"numeric",month:"long"});
@@ -344,9 +418,9 @@ $("voiceToggle").onclick=()=>{state.settings.voice=!state.settings.voice;save();
 $("workoutSelect").onchange=renderHome;
 $("startWorkout").onclick=()=>{
  activeWorkout=$("workoutSelect").value;queue=WORKOUTS[activeWorkout].exercises.map(x=>[...x]);exerciseIndex=0;setIndex=1;
- showPage("workoutPage");renderExercise();speak(`Today's session is ${WORKOUTS[activeWorkout].title}. Keep shoulder pain mild and movement controlled. Let's begin.`);
+ showPage("workoutPage");renderExercise();speak(`Today's session is ${WORKOUTS[activeWorkout].title}. Keep shoulder pain mild and movement controlled. Let's begin.`);setTimeout(()=>showQuote(true),4500);
 };
-function renderExercise(){
+function renderExercise(preserve=false){
  const [id,sets,reps]=queue[exerciseIndex],m=MACHINES.find(x=>x.id===id);
  $("exerciseCounter").textContent=`Exercise ${exerciseIndex+1} of ${queue.length} · Set ${setIndex} of ${sets}`;
  $("exercisePhoto").src=m.photo;$("exerciseName").textContent=m.name;$("exerciseDose").textContent=`${sets} set${sets>1?"s":""} · ${reps}`;
@@ -357,10 +431,15 @@ function renderExercise(){
  lastPrevious=previous||null;
  $("lastResult").textContent=previous?`Last logged: ${previous.weight||"—"} kg × ${previous.reps||"—"} · shoulder ${previous.setPain}/10`:"No previous result yet. Start conservatively.";
  $("setWeight").value=previous?.weight||"";$("setReps").value=previous?.reps||"";
+ if(!preserve){
  selectedSetPain=0;document.querySelectorAll("[data-setpain]").forEach(b=>b.classList.remove("selected"));resetTimer();resetSetTimer();
+}else{
+ document.querySelectorAll("[data-setpain]").forEach(b=>b.classList.toggle("selected",+b.dataset.setpain===selectedSetPain));
+ drawTimer();drawSetTimer();
+}
  exerciseStartedAt=Date.now();restartGuidance();
  const next=queue[exerciseIndex+1];const nextName=next?MACHINES.find(x=>x.id===next[0]).name:"the workout summary";
- speak(`Now: ${m.name}. Set ${setIndex} of ${sets}. Target ${reps}. After this, ${nextName}.`);
+ speak(`Now: ${m.name}. Set ${setIndex} of ${sets}. Target ${reps}. After this, ${nextName}.`);snapshotSession();
 }
 function coachCue(m){
  if(["er","iso","scap","serratus"].includes(m.id))return "This is control work, not a test. Finish with plenty in reserve.";
@@ -368,7 +447,9 @@ function coachCue(m){
  if(["legpress","plateleg","abductor","glute"].includes(m.id))return "Use the strongest comfortable range without pelvic stretch or breath-holding.";
  return "Smooth effort. Stay below symptoms and keep breathing.";
 }
-document.querySelectorAll("[data-setpain]").forEach(b=>b.onclick=()=>{selectedSetPain=+b.dataset.setpain;document.querySelectorAll("[data-setpain]").forEach(x=>x.classList.remove("selected"));b.classList.add("selected")});
+
+["setWeight","setReps"].forEach(id=>$(id).addEventListener("input",snapshotSession));
+document.querySelectorAll("[data-setpain]").forEach(b=>b.onclick=()=>{selectedSetPain=+b.dataset.setpain;document.querySelectorAll("[data-setpain]").forEach(x=>x.classList.remove("selected"));b.classList.add("selected");snapshotSession()});
 document.addEventListener("click",e=>{
  const wb=e.target.closest("[data-weight]");
  if(wb){$("setWeight").value=Math.max(0,(+$("setWeight").value||0)+(+wb.dataset.weight));return}
@@ -413,7 +494,7 @@ function beginSetCountdown(){
      setTimeout(()=>overlay.classList.remove("show"),450);
      setActive=true;setSeconds=0;drawSetTimer();
      $("startSet").style.display="none";$("finishSet").style.display="block";
-     setTimerInt=setInterval(()=>{setSeconds++;drawSetTimer();if(setSeconds===30)speak("Thirty seconds.");if(setSeconds===60)speak("One minute.")},1000);
+     setTimerInt=setInterval(()=>{setSeconds++;drawSetTimer();snapshotSession();if(setSeconds===30)speak("Thirty seconds.");if(setSeconds===60)speak("One minute.")},1000);
    }
  },800);
 }
@@ -425,7 +506,7 @@ function startRestAutomatically(nextExercise=false){
  $("restButton").textContent="Pause";
  speak(`${nextExercise?"Next exercise is ready after this rest.":"Next set follows after this rest."} Rest for ${seconds} seconds.`);
  timer=setInterval(()=>{
-   seconds--;drawTimer();
+   seconds--;drawTimer();snapshotSession();
    if(seconds===60)speak("One minute remains.");
    if(seconds===45)speak("Forty five seconds.");
    if(seconds===30)speak("Thirty seconds. Get ready.");
@@ -444,14 +525,14 @@ $("skipRest").onclick=()=>{
 $("restButton").onclick=()=>{
  if(timer){clearInterval(timer);timer=null;$("restButton").textContent="Resume";return}
  $("restButton").textContent="Pause";
- timer=setInterval(()=>{seconds--;drawTimer();if(seconds===60)speak("One minute remains.");if(seconds===45)speak("Forty five seconds. Coming up: the next set.");if(seconds===30)speak("Thirty seconds.");if(seconds===10)speak("Ten seconds. Get ready.");if(seconds<=0){clearInterval(timer);timer=null;$("restButton").textContent="Done";speak("Go. Start the set when ready.");navigator.vibrate?.([100,60,100])}},1000);
+ timer=setInterval(()=>{seconds--;drawTimer();snapshotSession();if(seconds===60)speak("One minute remains.");if(seconds===45)speak("Forty five seconds. Coming up: the next set.");if(seconds===30)speak("Thirty seconds.");if(seconds===10)speak("Ten seconds. Get ready.");if(seconds<=0){clearInterval(timer);timer=null;$("restButton").textContent="Done";speak("Go. Start the set when ready.");navigator.vibrate?.([100,60,100])}},1000);
 };
 $("startSet").onclick=beginSetCountdown;
 $("finishSet").onclick=()=>{
  clearInterval(setTimerInt);setTimerInt=null;setActive=false;
  const [id,sets]=queue[exerciseIndex];
  const entry={date:new Date().toISOString(),workout:activeWorkout,exercise:id,set:setIndex,weight:+$("setWeight").value||0,reps:+$("setReps").value||0,setPain:selectedSetPain,duration:setSeconds};
- state.sets.push(entry);save();
+ state.sets.push(entry);save();snapshotSession();if(state.settings.motivation!==false&&state.sets.length%5===0)setTimeout(()=>showQuote(true),1500);
  if(selectedSetPain>=5)speak("Stop this shoulder exercise. Move to a pain free alternative or finish shoulder loading for today.");
  else if(selectedSetPain>=3)speak("Set saved. Keep the same or reduce the load. Do not increase range.");
  else speak("Set complete. Good control. Rest starts now.");
@@ -465,9 +546,9 @@ $("occupied").onclick=()=>{
  const item=queue.splice(exerciseIndex,1)[0];queue.push(item);
  if(exerciseIndex>=queue.length)exerciseIndex=0;setIndex=1;renderExercise();speak("Moved to the end. Let's keep the session flowing.");toast("Moved to end");
 };
-$("exitWorkout").onclick=()=>{if(confirm("Exit this workout? Your completed sets stay saved.")){clearInterval(guideTimer);activeWorkout=null;showPage("homePage");renderHome()}};
+$("exitWorkout").onclick=()=>{if(confirm("Leave the workout screen? You can resume later.")){snapshotSession();clearInterval(guideTimer);clearInterval(timer);clearInterval(setTimerInt);showPage("homePage");renderHome();renderResume()}};
 function finishWorkout(){
- clearInterval(guideTimer);state.completed.push({date:new Date().toISOString(),workout:activeWorkout});save();showPage("homePage");renderHome();
+ clearInterval(guideTimer);clearInterval(timer);clearInterval(setTimerInt);state.completed.push({date:new Date().toISOString(),workout:activeWorkout});clearSession();save();showPage("homePage");renderHome();renderResume();
  const msg="Workout complete. Good work. Check how the shoulder feels again in two to three hours and tomorrow morning.";speak(msg);$("coachBrief").textContent=msg;toast("Workout complete");
 }
 function renderPlan(){
@@ -486,10 +567,45 @@ function renderProgress(){
 $("exportData").onclick=()=>{const b=new Blob([JSON.stringify(state,null,2)],{type:"application/json"}),a=document.createElement("a");a.href=URL.createObjectURL(b);a.download="ryanfit-backup.json";a.click()};
 function showPage(id){document.querySelectorAll(".page,.nav").forEach(x=>x.classList.remove("active"));$(id).classList.add("active");document.querySelector(`.nav[data-page="${id}"]`)?.classList.add("active");window.scrollTo(0,0)}
 document.querySelectorAll(".nav").forEach(n=>n.onclick=()=>showPage(n.dataset.page));
+$("resumeWorkout").onclick=resumeSavedWorkout;
+$("discardResume").onclick=()=>{if(confirm("Discard the saved in-progress workout?")){clearSession();renderResume();toast("Saved workout discarded")}};
 buildSelect();renderHome();renderPlan();renderMachines();renderProgress();
 $("voiceToggle").textContent=state.settings.voice?"🔊":"🔇";$("voiceState").textContent=state.settings.voice?"On":"Off";
 $("voiceStyle").value=state.settings.voiceStyle||"calm";$("guideInterval").value=state.settings.guideInterval||60;$("fullGuidance").checked=state.settings.fullGuidance!==false;
 refreshVoices();
+
+function updateMediaSession(){
+ if(!("mediaSession" in navigator)||!activeWorkout||!queue.length)return;
+ const m=MACHINES.find(x=>x.id===queue[exerciseIndex][0]);
+ try{
+  navigator.mediaSession.metadata=new MediaMetadata({
+   title:m?.name||"RyanFit Workout",
+   artist:`Set ${setIndex} · ${WORKOUTS[activeWorkout].title}`,
+   album:timer?`${seconds}s rest remaining`:setActive?`${setSeconds}s into set`:"Ready to start"
+  });
+ }catch(e){}
+}
+function headsetPlay(){
+ if(document.getElementById("workoutPage").classList.contains("active")){
+   if(timer&&$("restButton").textContent==="Pause")$("restButton").click();
+   else if(!setActive)$("startSet").click();
+ }
+}
+function headsetPause(){
+ if(setActive)$("finishSet").click();
+ else if(timer)$("restButton").click();
+}
+if("mediaSession" in navigator){
+ const bind=(action,handler)=>{try{navigator.mediaSession.setActionHandler(action,handler)}catch(e){}};
+ bind("play",headsetPlay);
+ bind("pause",headsetPause);
+ bind("nexttrack",()=>{if(setActive)$("finishSet").click()});
+ bind("previoustrack",()=>speak(guidanceMessage(),true));
+}
+window.addEventListener("pagehide",snapshotSession);
+document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="hidden")snapshotSession()});
+setInterval(()=>{if(activeWorkout)snapshotSession()},5000);
+
 if("serviceWorker"in navigator)window.addEventListener("load",()=>navigator.serviceWorker.register("./sw.js").catch(()=>{}));
 
 </script>
