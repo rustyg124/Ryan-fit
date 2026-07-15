@@ -1,21 +1,29 @@
-# RyanFit Genesis Alpha
+# RyanFit Genesis Alpha — Tested Build
 
-This branch is the safe development version. It does **not** deploy over the live `main` app.
+This package has been compiled successfully with:
 
-## Upload
-Upload the complete contents of this package to the `genesis` branch.
+```bash
+npm install
+npm run build
+```
 
-## Automatic check
-Every push to `genesis` runs **Genesis Build Check** in GitHub Actions. A green tick means the React/TypeScript project compiled successfully.
+Upload the **contents of this folder** to the root of the `genesis` branch.
+Do not press **Compare & pull request** and do not change GitHub Pages from `main` yet.
 
-## Current Alpha scope
-- Persistent workout state
-- Resume after interruption
-- Start set / finish set / automatic rest
-- Previous weight and reps
-- Shoulder response per set
-- Actual Marleston machine photos
-- Basic voice coach with diagnostics
+After committing, open **Actions → Genesis Build Check**. A green tick confirms GitHub compiled the same project successfully.
+
+## Included Alpha features
+
+- React + TypeScript + Vite foundation
+- Persistent in-progress workout state
+- Resume after interruption or reload
+- Start set → countdown → active set → finish → automatic rest
+- Previous weight and reps preloaded
+- Shoulder-response logging per set
+- Actual Plus Fitness Marleston machine photos
+- Basic voice coach and diagnostics
 - `Just Follow Me` workout flow
 
-GitHub Pages deployment is intentionally deferred until the Alpha build passes.
+## Important
+
+The old files inherited from `main` may still appear in the `genesis` branch. They do not power Genesis once this new `index.html`, `src`, `public`, `package.json`, and Vite configuration are present. We can clean obsolete files after the build check is green.
