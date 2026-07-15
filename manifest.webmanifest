@@ -1,12 +1,12 @@
 {
-  "name": "RyanFit Coach",
+  "name": "RyanFit Genesis Alpha",
   "short_name": "RyanFit",
-  "description": "Shoulder-aware visual and spoken gym coach.",
-  "start_url": "./?v=1.4.1",
-  "scope": "./",
+  "description": "A hands-free, shoulder-aware workout coach.",
+  "start_url": "/Ryan-fit/",
+  "scope": "/Ryan-fit/",
   "display": "standalone",
-  "background_color": "#0c1117",
-  "theme_color": "#0c1117",
+  "background_color": "#0a1016",
+  "theme_color": "#0a1016",
   "icons": [
     {
       "src": "./icon-192.png",
