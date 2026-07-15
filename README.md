@@ -1,8 +1,19 @@
-# RyanFit v1.1 — App Feel Repair
+# RyanFit v1.2 Voice Guide
 
-Upload these files to the repository root and replace existing versions:
-index.html, manifest.webmanifest, sw.js, icon-192.png, icon-512.png, .nojekyll
+Upload and replace:
+- index.html
+- sw.js
+- manifest.webmanifest
+- icon-192.png
+- icon-512.png
+- .nojekyll
 
-Do not delete the existing JPG machine photos.
+Keep all existing JPG machine photos.
 
-This version inlines CSS and JavaScript into index.html, preventing folder upload issues.
+New:
+- Available-voice picker and test button
+- Calm/direct/gruff speech styles
+- Full voice guidance at 60/90/120-second intervals
+- Spoken current set, next exercise, rest countdown and go prompts
+- Quick weight and rep controls
+- Last weight/reps automatically prefilled

@@ -33,6 +33,13 @@ details{background:var(--card2);padding:11px;border-radius:12px;margin-top:9px}s
 #toast{position:fixed;left:50%;bottom:95px;transform:translateX(-50%);opacity:0;background:#effff6;color:#102419;padding:10px 14px;border-radius:12px;font-weight:800;transition:.2s;z-index:20}#toast.show{opacity:1}
 @media(max-width:520px){.machine-grid{grid-template-columns:1fr}.machine-photo{height:275px}.stats{flex-direction:column}}
 
+
+.voice-grid{display:grid;grid-template-columns:1fr auto;gap:9px;align-items:end}
+.quick-row{display:grid;grid-template-columns:repeat(5,1fr);gap:7px;margin-top:7px}
+.quick-row button{padding:10px 5px;background:var(--card2);color:var(--text);border:1px solid var(--line);font-size:.82rem}
+.guide-status{display:flex;align-items:center;gap:8px;color:var(--muted);font-size:.82rem;margin-top:9px}
+.guide-dot{width:9px;height:9px;border-radius:50%;background:var(--accent);box-shadow:0 0 0 5px rgba(111,221,169,.12)}
+.setting-row{padding:10px 0;border-bottom:1px solid var(--line)}.setting-row:last-child{border-bottom:0}
 </style>
   <title>RyanFit Coach</title>
 </head>
@@ -40,7 +47,7 @@ details{background:var(--card2);padding:11px;border-radius:12px;margin-top:9px}s
 <div id="app">
   <header>
     <div><h1>RyanFit</h1><p>Coach • recover • rebuild</p></div>
-<span style="font-size:.72rem;color:#aeb9c7;background:#212a35;padding:6px 9px;border-radius:999px">v1.1</span>
+<span style="font-size:.72rem;color:#aeb9c7;background:#212a35;padding:6px 9px;border-radius:999px">v1.2</span>
     <button id="voiceToggle" class="icon-btn" aria-label="Toggle spoken coach">🔊</button>
   </header>
 
@@ -54,6 +61,20 @@ details{background:var(--card2);padding:11px;border-radius:12px;margin-top:9px}s
           <div><span>Phase</span><strong>Shoulder rebuild</strong></div>
           <div><span>Goal</span><strong>Lose 7 kg</strong></div>
         </div>
+      </article>
+
+      <article class="card">
+        <div class="between"><div><span class="eyebrow">Audio coach</span><h3>Voice and guidance</h3></div><span id="voiceState" class="chip">On</span></div>
+        <div class="voice-grid">
+          <div><label>Coach voice</label><select id="voiceSelect"><option>Loading available voices…</option></select></div>
+          <button id="testVoice" class="secondary">Test</button>
+        </div>
+        <div class="two">
+          <div><label>Speaking style</label><select id="voiceStyle"><option value="calm">Calm</option><option value="direct">Direct</option><option value="gruff">Gruff</option></select></div>
+          <div><label>Guidance interval</label><select id="guideInterval"><option value="60">Every minute</option><option value="90">Every 90 seconds</option><option value="120">Every 2 minutes</option></select></div>
+        </div>
+        <label><input id="fullGuidance" type="checkbox" style="width:auto"> Full hands-free guidance</label>
+        <div class="guide-status"><span class="guide-dot"></span><span>Voice prompts announce the current set, next exercise, rest and restart.</span></div>
       </article>
 
       <article class="card">
@@ -105,8 +126,14 @@ details{background:var(--card2);padding:11px;border-radius:12px;margin-top:9px}s
         <details><summary>Shoulder / pelvic safeguards</summary><p id="exerciseSafety"></p></details>
         <div class="last-result" id="lastResult"></div>
         <div class="two">
-          <div><label>Weight (kg)</label><input id="setWeight" type="number" step="0.5" inputmode="decimal"></div>
-          <div><label>Reps / seconds</label><input id="setReps" type="number" inputmode="numeric"></div>
+          <div>
+            <label>Weight (kg)</label><input id="setWeight" type="number" step="0.5" inputmode="decimal">
+            <div class="quick-row"><button data-weight="-5">−5</button><button data-weight="-2.5">−2.5</button><button id="useLastWeight">Last</button><button data-weight="2.5">+2.5</button><button data-weight="5">+5</button></div>
+          </div>
+          <div>
+            <label>Reps / seconds</label><input id="setReps" type="number" inputmode="numeric">
+            <div class="quick-row"><button data-reps="-2">−2</button><button data-reps="-1">−1</button><button id="useLastReps">Last</button><button data-reps="1">+1</button><button data-reps="2">+2</button></div>
+          </div>
         </div>
         <label>Shoulder response after this set</label>
         <div class="pain-buttons">
@@ -229,20 +256,44 @@ const WEEK=[
 </script>
 <script>
 
-const EMPTY={checkins:[],sets:[],body:[],completed:[],settings:{voice:true,rest:90}};
+const EMPTY={checkins:[],sets:[],body:[],completed:[],settings:{voice:true,rest:90,voiceName:"",voiceStyle:"calm",guideInterval:60,fullGuidance:true}};
 const clone=x=>JSON.parse(JSON.stringify(x));
 function load(){try{return JSON.parse(localStorage.getItem("ryanfit_coach_v1"))||clone(EMPTY)}catch(e){return clone(EMPTY)}}
 let state=load(), activeWorkout=null, queue=[], exerciseIndex=0, setIndex=1, selectedSetPain=0, timer=null, seconds=90;
 const $=id=>document.getElementById(id);
 function save(){try{localStorage.setItem("ryanfit_coach_v1",JSON.stringify(state))}catch(e){}}
 function toast(msg="Saved"){const t=$("toast");t.textContent=msg;t.classList.add("show");setTimeout(()=>t.classList.remove("show"),1300)}
-function speak(text){
- if(!state.settings.voice || !("speechSynthesis" in window))return;
+let availableVoices=[],guideTimer=null,exerciseStartedAt=0,lastPrevious=null;
+function refreshVoices(){
+  if(!("speechSynthesis" in window))return;
+  availableVoices=speechSynthesis.getVoices();
+  const english=availableVoices.filter(v=>/^en/i.test(v.lang));
+  const list=english.length?english:availableVoices;
+  $("voiceSelect").innerHTML=list.map(v=>`<option value="${v.name}">${v.name} · ${v.lang}${v.default?" · default":""}</option>`).join("");
+  if(state.settings.voiceName && list.some(v=>v.name===state.settings.voiceName))$("voiceSelect").value=state.settings.voiceName;
+  else{
+    const irish=list.find(v=>/en-IE/i.test(v.lang)||/irish/i.test(v.name));
+    const au=list.find(v=>/en-AU/i.test(v.lang));
+    const pick=irish||au||list[0];
+    if(pick){$("voiceSelect").value=pick.name;state.settings.voiceName=pick.name;save()}
+  }
+}
+function speak(text,force=false){
+ if((!state.settings.voice&&!force) || !("speechSynthesis" in window))return;
  speechSynthesis.cancel();
- const u=new SpeechSynthesisUtterance(text);u.rate=.92;u.pitch=.95;u.volume=1;
- const voices=speechSynthesis.getVoices();
- const au=voices.find(v=>/en-AU/i.test(v.lang));if(au)u.voice=au;
+ const u=new SpeechSynthesisUtterance(text);
+ const style=state.settings.voiceStyle||"calm";
+ u.rate=style==="direct"?1.02:style==="gruff"?.84:.92;
+ u.pitch=style==="gruff"?.72:style==="direct"?.92:1;
+ u.volume=1;
+ const chosen=availableVoices.find(v=>v.name===state.settings.voiceName);
+ if(chosen)u.voice=chosen;
  speechSynthesis.speak(u);
+}
+if("speechSynthesis" in window){
+ refreshVoices();
+ speechSynthesis.onvoiceschanged=refreshVoices;
+ setTimeout(refreshVoices,400);
 }
 function todayISO(){return new Date().toISOString().slice(0,10)}
 function scheduledId(){return WEEK[(new Date().getDay()+6)%7][1]}
@@ -262,6 +313,11 @@ function buildSelect(){
  $("workoutSelect").innerHTML=WEEK.map(([day,id])=>`<option value="${id}">${day} · ${WORKOUTS[id].title}</option>`).join("");
  $("workoutSelect").value=scheduledId();
 }
+$("voiceSelect").onchange=()=>{state.settings.voiceName=$("voiceSelect").value;save();speak("Voice selected. I will use this voice for your coaching.",true)};
+$("voiceStyle").onchange=()=>{state.settings.voiceStyle=$("voiceStyle").value;save();speak("Speaking style updated.",true)};
+$("guideInterval").onchange=()=>{state.settings.guideInterval=+$("guideInterval").value;save();restartGuidance()};
+$("fullGuidance").onchange=()=>{state.settings.fullGuidance=$("fullGuidance").checked;save();restartGuidance();toast(state.settings.fullGuidance?"Full guidance on":"Full guidance off")};
+$("testVoice").onclick=()=>speak("Morning Ryan. This is your selected RyanFit coach voice. Smooth movement, steady effort, and we will build from there.",true);
 $("pain").oninput=e=>$("painLabel").textContent=e.target.value;
 $("coachPlan").onclick=()=>{
  const pain=+$("pain").value,range=$("range").value,energy=$("energy").value,sleep=$("sleep").value;
@@ -272,7 +328,7 @@ $("coachPlan").onclick=()=>{
  else{msg="Use the shoulder-rebuild session, but keep pain mild and do not progress load unless symptoms remain settled later today and tomorrow."}
  $("coachAdvice").className=cls;$("coachAdvice").textContent=msg;$("coachBrief").textContent=msg;speak(msg);toast();
 };
-$("voiceToggle").onclick=()=>{state.settings.voice=!state.settings.voice;save();$("voiceToggle").textContent=state.settings.voice?"🔊":"🔇";toast(state.settings.voice?"Voice coach on":"Voice coach off");if(state.settings.voice)speak("Voice coach is on.")};
+$("voiceToggle").onclick=()=>{state.settings.voice=!state.settings.voice;save();$("voiceToggle").textContent=state.settings.voice?"🔊":"🔇";$("voiceState").textContent=state.settings.voice?"On":"Off";toast(state.settings.voice?"Voice coach on":"Voice coach off");if(state.settings.voice)speak("Voice coach is on.")};
 $("workoutSelect").onchange=renderHome;
 $("startWorkout").onclick=()=>{
  activeWorkout=$("workoutSelect").value;queue=WORKOUTS[activeWorkout].exercises.map(x=>[...x]);exerciseIndex=0;setIndex=1;
@@ -286,9 +342,13 @@ function renderExercise(){
  $("exerciseWhy").textContent=WORKOUTS[activeWorkout].purpose;
  $("coachCue").textContent=coachCue(m);
  const previous=[...state.sets].reverse().find(x=>x.exercise===id);
+ lastPrevious=previous||null;
  $("lastResult").textContent=previous?`Last logged: ${previous.weight||"—"} kg × ${previous.reps||"—"} · shoulder ${previous.setPain}/10`:"No previous result yet. Start conservatively.";
- $("setWeight").value=previous?.weight||"";$("setReps").value="";
+ $("setWeight").value=previous?.weight||"";$("setReps").value=previous?.reps||"";
  selectedSetPain=0;document.querySelectorAll("[data-setpain]").forEach(b=>b.classList.remove("selected"));resetTimer();
+ exerciseStartedAt=Date.now();restartGuidance();
+ const next=queue[exerciseIndex+1];const nextName=next?MACHINES.find(x=>x.id===next[0]).name:"the workout summary";
+ speak(`Now: ${m.name}. Set ${setIndex} of ${sets}. Target ${reps}. After this, ${nextName}.`);
 }
 function coachCue(m){
  if(["er","iso","scap","serratus"].includes(m.id))return "This is control work, not a test. Finish with plenty in reserve.";
@@ -297,12 +357,34 @@ function coachCue(m){
  return "Smooth effort. Stay below symptoms and keep breathing.";
 }
 document.querySelectorAll("[data-setpain]").forEach(b=>b.onclick=()=>{selectedSetPain=+b.dataset.setpain;document.querySelectorAll("[data-setpain]").forEach(x=>x.classList.remove("selected"));b.classList.add("selected")});
+document.addEventListener("click",e=>{
+ const wb=e.target.closest("[data-weight]");
+ if(wb){$("setWeight").value=Math.max(0,(+$("setWeight").value||0)+(+wb.dataset.weight));return}
+ const rb=e.target.closest("[data-reps]");
+ if(rb){$("setReps").value=Math.max(0,(+$("setReps").value||0)+(+rb.dataset.reps));return}
+});
+$("useLastWeight").onclick=()=>{$("setWeight").value=lastPrevious?.weight||0};
+$("useLastReps").onclick=()=>{$("setReps").value=lastPrevious?.reps||0};
+function guidanceMessage(){
+ if(!activeWorkout||!queue.length)return "";
+ const [id,sets,reps]=queue[exerciseIndex],m=MACHINES.find(x=>x.id===id);
+ const next=queue[exerciseIndex+1],nextName=next?MACHINES.find(x=>x.id===next[0]).name:"your workout finish";
+ const elapsed=Math.max(1,Math.floor((Date.now()-exerciseStartedAt)/60000));
+ if(timer)return `${seconds} seconds remain in your rest. Next is set ${setIndex} of ${sets} on ${m.name}.`;
+ return `Minute ${elapsed}. You are on ${m.name}, set ${setIndex} of ${sets}, aiming for ${reps}. Coming next: ${nextName}. Tap complete set when finished.`;
+}
+function restartGuidance(){
+ clearInterval(guideTimer);guideTimer=null;
+ if(!state.settings.fullGuidance||!activeWorkout)return;
+ const ms=(state.settings.guideInterval||60)*1000;
+ guideTimer=setInterval(()=>{if(document.getElementById("workoutPage").classList.contains("active"))speak(guidanceMessage())},ms);
+}
 function resetTimer(){clearInterval(timer);timer=null;seconds=state.settings.rest||90;drawTimer();$("restButton").textContent="Start rest"}
 function drawTimer(){$("restTimer").textContent=String(Math.floor(seconds/60)).padStart(2,"0")+":"+String(seconds%60).padStart(2,"0")}
 $("restButton").onclick=()=>{
  if(timer){clearInterval(timer);timer=null;$("restButton").textContent="Resume";return}
  $("restButton").textContent="Pause";
- timer=setInterval(()=>{seconds--;drawTimer();if(seconds===45)speak("Halfway through your rest.");if(seconds===10)speak("Ten seconds.");if(seconds<=0){clearInterval(timer);timer=null;$("restButton").textContent="Done";speak("Rest complete. Set up when ready.");navigator.vibrate?.([100,60,100])}},1000);
+ timer=setInterval(()=>{seconds--;drawTimer();if(seconds===60)speak("One minute remains.");if(seconds===45)speak("Forty five seconds. Coming up: the next set.");if(seconds===30)speak("Thirty seconds.");if(seconds===10)speak("Ten seconds. Get ready.");if(seconds<=0){clearInterval(timer);timer=null;$("restButton").textContent="Done";speak("Go. Start the set when ready.");navigator.vibrate?.([100,60,100])}},1000);
 };
 $("completeSet").onclick=()=>{
  const [id,sets]=queue[exerciseIndex];
@@ -319,9 +401,9 @@ $("occupied").onclick=()=>{
  const item=queue.splice(exerciseIndex,1)[0];queue.push(item);
  if(exerciseIndex>=queue.length)exerciseIndex=0;setIndex=1;renderExercise();speak("Moved to the end. Let's keep the session flowing.");toast("Moved to end");
 };
-$("exitWorkout").onclick=()=>{if(confirm("Exit this workout? Your completed sets stay saved.")){showPage("homePage");renderHome()}};
+$("exitWorkout").onclick=()=>{if(confirm("Exit this workout? Your completed sets stay saved.")){clearInterval(guideTimer);activeWorkout=null;showPage("homePage");renderHome()}};
 function finishWorkout(){
- state.completed.push({date:new Date().toISOString(),workout:activeWorkout});save();showPage("homePage");renderHome();
+ clearInterval(guideTimer);state.completed.push({date:new Date().toISOString(),workout:activeWorkout});save();showPage("homePage");renderHome();
  const msg="Workout complete. Good work. Check how the shoulder feels again in two to three hours and tomorrow morning.";speak(msg);$("coachBrief").textContent=msg;toast("Workout complete");
 }
 function renderPlan(){
@@ -340,7 +422,10 @@ function renderProgress(){
 $("exportData").onclick=()=>{const b=new Blob([JSON.stringify(state,null,2)],{type:"application/json"}),a=document.createElement("a");a.href=URL.createObjectURL(b);a.download="ryanfit-backup.json";a.click()};
 function showPage(id){document.querySelectorAll(".page,.nav").forEach(x=>x.classList.remove("active"));$(id).classList.add("active");document.querySelector(`.nav[data-page="${id}"]`)?.classList.add("active");window.scrollTo(0,0)}
 document.querySelectorAll(".nav").forEach(n=>n.onclick=()=>showPage(n.dataset.page));
-buildSelect();renderHome();renderPlan();renderMachines();renderProgress();$("voiceToggle").textContent=state.settings.voice?"🔊":"🔇";
+buildSelect();renderHome();renderPlan();renderMachines();renderProgress();
+$("voiceToggle").textContent=state.settings.voice?"🔊":"🔇";$("voiceState").textContent=state.settings.voice?"On":"Off";
+$("voiceStyle").value=state.settings.voiceStyle||"calm";$("guideInterval").value=state.settings.guideInterval||60;$("fullGuidance").checked=state.settings.fullGuidance!==false;
+refreshVoices();
 if("serviceWorker"in navigator)window.addEventListener("load",()=>navigator.serviceWorker.register("./sw.js").catch(()=>{}));
 
 </script>
