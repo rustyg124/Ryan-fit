@@ -4,18 +4,43 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#0c1117">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="RyanFit">
   <link rel="apple-touch-icon" href="./icon-192.png">
   <link rel="manifest" href="./manifest.webmanifest">
-  <link rel="stylesheet" href="./css/styles.css">
+  <style>
+
+:root{--bg:#0c1117;--card:#171e26;--card2:#212a35;--text:#f5f7fa;--muted:#aeb9c7;--line:#303b49;--accent:#6fdda9;--warn:#ffd166;--danger:#ff8585}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;line-height:1.45}
+button,input,select{font:inherit}#app{max-width:780px;margin:auto;padding:env(safe-area-inset-top) 14px calc(92px + env(safe-area-inset-bottom))}
+header{display:flex;justify-content:space-between;align-items:center;padding:17px 3px 10px;position:sticky;top:0;background:linear-gradient(var(--bg) 80%,transparent);z-index:5}h1{font-size:1.45rem;margin:0}header p{margin:0;color:var(--muted);font-size:.86rem}
+.card{background:var(--card);border:1px solid var(--line);border-radius:19px;padding:16px;margin:12px 0;box-shadow:0 12px 30px rgba(0,0,0,.22)}.hero{background:linear-gradient(145deg,#1d2a34,#14251f)}
+h2{margin:.25rem 0 .45rem;font-size:1.5rem}h3{margin:.15rem 0 .6rem}.eyebrow{font-size:.76rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}.muted{color:var(--muted)}
+.goal-row,.stats,.two,.between{display:flex;gap:10px}.between{justify-content:space-between;align-items:center}.two>*{flex:1}.goal-row>div,.stats>div{flex:1;background:rgba(255,255,255,.045);padding:11px;border-radius:13px}.goal-row span,.stats span{display:block;font-size:.75rem;color:var(--muted)}.stats strong{font-size:1.3rem}
+button{border:0;border-radius:14px;padding:13px 14px;font-weight:800;cursor:pointer}.primary{background:var(--accent);color:#082016}.secondary{background:var(--card2);color:var(--text);border:1px solid var(--line)}.warning{background:var(--warn);color:#332600}.quiet,.icon-btn{background:transparent;color:var(--muted);border:1px solid var(--line)}.icon-btn{font-size:1.15rem;padding:9px 12px}.full{width:100%;margin-top:12px}
+label{display:block;color:var(--muted);font-size:.83rem;margin:9px 0 4px}input,select{width:100%;background:#10161c;color:var(--text);border:1px solid var(--line);border-radius:12px;padding:12px}
+.callout{padding:11px 12px;border-left:4px solid var(--accent);border-radius:9px;background:#17281f}.caution{border-left-color:var(--warn);background:#292419}.danger{border-left-color:var(--danger);background:#2e1c20}.chip{padding:6px 10px;border-radius:999px;background:var(--card2);color:var(--muted);font-size:.78rem}
+.page{display:none}.page.active{display:block}nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:min(780px,100%);display:grid;grid-template-columns:repeat(4,1fr);background:#11171d;border-top:1px solid var(--line);padding:7px 6px calc(7px + env(safe-area-inset-bottom));z-index:10}.nav{background:transparent;color:var(--muted);font-size:.76rem;padding:9px 2px}.nav.active{background:var(--card2);color:var(--text)}
+.machine-photo{width:100%;height:250px;object-fit:cover;border-radius:15px;border:1px solid var(--line);margin-top:12px}.dose{font-size:1.1rem;font-weight:750}.coach-line{padding:12px;border-radius:13px;background:#12251d;color:#dcffeb;border:1px solid #2c6249}
+details{background:var(--card2);padding:11px;border-radius:12px;margin-top:9px}summary{font-weight:750}.last-result{color:var(--muted);font-size:.85rem;margin:10px 0}.pain-buttons{display:grid;grid-template-columns:repeat(3,1fr);gap:7px}.pain-buttons button{background:var(--card2);color:var(--text);border:1px solid var(--line)}.pain-buttons button.selected{outline:2px solid var(--accent)}
+#restTimer{text-align:center;font-size:2.35rem;font-variant-numeric:tabular-nums;margin:9px}.plan-day{padding:12px 0;border-bottom:1px solid var(--line)}.plan-day:last-child{border-bottom:0}.plan-day ul{padding-left:20px;color:var(--muted)}
+.map{display:grid;grid-template-columns:1fr 1.3fr;gap:9px}.zone{padding:14px;border-radius:13px;border:1px solid var(--line);background:#11171d;min-height:90px}.pin,.weights{grid-column:1/3}.room{grid-column:2}.zone small{color:var(--muted)}
+.machine-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}.machine{background:var(--card2);border:1px solid var(--line);border-radius:14px;overflow:hidden}.machine img{width:100%;height:135px;object-fit:cover}.machine div{padding:10px}.machine h4{margin:0}.machine p{font-size:.78rem;color:var(--muted);margin:4px 0}
+#toast{position:fixed;left:50%;bottom:95px;transform:translateX(-50%);opacity:0;background:#effff6;color:#102419;padding:10px 14px;border-radius:12px;font-weight:800;transition:.2s;z-index:20}#toast.show{opacity:1}
+@media(max-width:520px){.machine-grid{grid-template-columns:1fr}.machine-photo{height:275px}.stats{flex-direction:column}}
+
+</style>
   <title>RyanFit Coach</title>
 </head>
 <body>
 <div id="app">
   <header>
     <div><h1>RyanFit</h1><p>Coach • recover • rebuild</p></div>
+<span style="font-size:.72rem;color:#aeb9c7;background:#212a35;padding:6px 9px;border-radius:999px">v1.1</span>
     <button id="voiceToggle" class="icon-btn" aria-label="Toggle spoken coach">🔊</button>
   </header>
 
@@ -143,7 +168,181 @@
   </nav>
 </div>
 <div id="toast">Saved</div>
-<script src="./js/data.js"></script>
-<script src="./js/app.js"></script>
+<script>
+
+const MACHINES=[
+{id:"treadmill",name:"Treadmill",photo:"./treadmill.jpg",zone:"Cardio — right side",muscle:"Cardio",cues:"Walk tall at an easy pace. Add only a modest incline.",safety:"Stop if pelvic or urethral symptoms increase."},
+{id:"stairs",name:"StairMill",photo:"./stairmill.jpg",zone:"Cardio — right side",muscle:"Legs / cardio",cues:"Steady rhythm with light hand support.",safety:"Avoid hard intervals that make you brace or strain."},
+{id:"er",name:"Cable external rotation — elbow tucked",photo:"./functional_trainer.jpg",zone:"Cable area — ahead",muscle:"Rotator cuff",cues:"Set pulley around elbow height. Keep elbow gently against a towel at your side. Rotate only through a pain-free short arc.",safety:"Extremely light load. Do not chase fatigue or range."},
+{id:"iso",name:"External-rotation isometric",photo:"./functional_trainer.jpg",zone:"Cable area — ahead",muscle:"Rotator cuff",cues:"Elbow at side. Press outward gently into a fixed cable handle or wall without moving the arm.",safety:"Submaximal effort only, about 20–30%. Stop if pain rises."},
+{id:"scap",name:"Low cable scapular retraction",photo:"./functional_trainer.jpg",zone:"Cable area — ahead",muscle:"Mid-back / scapular control",cues:"Arms low and nearly straight. Draw shoulder blades gently back and down without lifting the arm.",safety:"Keep the arm below the painful elevation range."},
+{id:"serratus",name:"Supine serratus punch",photo:"./bench.jpg",zone:"Rear benches",muscle:"Serratus anterior",cues:"Lie on the bench with arm pointing only as high as comfortable. Reach shoulder blade toward ceiling without bending elbow.",safety:"Use no weight initially. Do not move into the painful arc."},
+{id:"row",name:"Low cable row — short range",photo:"./functional_trainer.jpg",zone:"Cable area — ahead",muscle:"Back / biceps",cues:"Use a neutral grip. Keep elbows low and pull only until upper arm reaches your side.",safety:"No shrugging or forceful pull. Substitute scapular retraction if painful."},
+{id:"arms",name:"Biceps curl / triceps machine",photo:"./arm_machine.jpg",zone:"Pin-loaded area — ahead",muscle:"Arms",cues:"Keep upper arm supported and shoulder still.",safety:"Stop if the shoulder rolls forward or aches."},
+{id:"legpress",name:"Pin-loaded leg press — partial depth",photo:"./leg_press.jpg",zone:"Pin-loaded area — ahead",muscle:"Quads / glutes",cues:"Set seat far enough back and use a controlled partial range.",safety:"Stop before hips tuck or the pelvic/urethral area feels stretched."},
+{id:"plateleg",name:"Plate-loaded leg press — partial depth",photo:"./plate_leg_press.jpg",zone:"Plate-loaded area",muscle:"Quads / glutes",cues:"Start light. Keep pelvis stable and knees tracking comfortably.",safety:"No deep hip flexion and no breath-holding."},
+{id:"legext",name:"Leg extension",photo:"./leg_extension.jpg",zone:"Pin-loaded area — ahead",muscle:"Quadriceps",cues:"Align knee with pivot and lower slowly.",safety:"Use normal breathing; do not strain."},
+{id:"legcurl",name:"Seated leg curl",photo:"./leg_curl.jpg",zone:"Pin-loaded area — ahead",muscle:"Hamstrings",cues:"Secure thigh pad comfortably and curl without lifting hips.",safety:"Adjust pads to avoid groin or pelvic pulling."},
+{id:"abductor",name:"Hip abductor — restricted range",photo:"./hip_abductor.jpg",zone:"Pin-loaded area — ahead",muscle:"Side glutes",cues:"Open knees through a modest comfortable range and pause.",safety:"Do not force a wide spread."},
+{id:"glute",name:"Standing glute machine — short range",photo:"./glute_machine.jpg",zone:"Pin-loaded area — ahead",muscle:"Glute max",cues:"Keep torso steady and drive leg back a short distance.",safety:"Use light hand support and avoid pelvic stretch."},
+{id:"calf",name:"Plate-loaded calf raise",photo:"./calf_raise.jpg",zone:"Plate-loaded area",muscle:"Calves",cues:"Rise, pause and lower slowly.",safety:"Check pad position and avoid straining."},
+{id:"pulldown",name:"Lat pulldown — deferred",photo:"./lat_pulldown.jpg",zone:"Pin-loaded area — ahead",muscle:"Back",cues:"This remains in the library for later.",safety:"Not currently programmed while elevation above 45° is painful."},
+{id:"press",name:"Multi-press — deferred",photo:"./multi_press.jpg",zone:"Pin-loaded area — ahead",muscle:"Chest / shoulders",cues:"Chest and shoulder pressing will be reintroduced later.",safety:"Not currently programmed while lifting above 45° remains painful."}
+];
+
+const WORKOUTS={
+pull:{
+ title:"Upper rebuild A",duration:"55–70 min",purpose:"Restore cuff and scapular control without loading through the painful elevation range.",
+ exercises:[
+  ["treadmill",1,"6–8 min"],["iso",2,"20 sec"],["er",2,"12–15"],["scap",3,"12–15"],["row",2,"12–15"],["arms",2,"12–15"],["treadmill",1,"15–20 min"]
+ ]},
+legsA:{
+ title:"Legs + glutes A",duration:"65–80 min",purpose:"Train hard enough to rebuild muscle while avoiding squats and forced pelvic stretch.",
+ exercises:[
+  ["treadmill",1,"8 min"],["legpress",3,"12–15"],["legext",3,"12–15"],["legcurl",3,"12–15"],["abductor",3,"15–20"],["calf",3,"12–20"],["treadmill",1,"12–20 min"]
+ ]},
+recovery:{
+ title:"Shoulder mobility + conditioning",duration:"35–50 min",purpose:"A low-load session for movement confidence, cuff activation and fat-loss support.",
+ exercises:[
+  ["treadmill",1,"10 min"],["iso",2,"20 sec"],["er",2,"12"],["scap",2,"15"],["serratus",2,"10–12"],["treadmill",1,"15–25 min"]
+ ]},
+upperB:{
+ title:"Upper rebuild B",duration:"50–65 min",purpose:"Repeat safe patterns with slightly less volume and assess next-day response.",
+ exercises:[
+  ["treadmill",1,"6–8 min"],["iso",2,"20 sec"],["er",2,"12–15"],["serratus",2,"10–12"],["row",2,"12–15"],["arms",2,"12–15"],["treadmill",1,"15 min"]
+ ]},
+legsB:{
+ title:"Legs + glutes B",duration:"65–80 min",purpose:"Posterior-chain and glute emphasis without deep hip flexion or wide pelvic positions.",
+ exercises:[
+  ["treadmill",1,"8 min"],["plateleg",3,"10–15"],["legcurl",4,"10–15"],["glute",3,"12–15 each"],["abductor",2,"15–20"],["calf",4,"12–20"],["stairs",1,"8–12 min easy"]
+ ]},
+conditioning:{
+ title:"Conditioning + optional primer",duration:"35–55 min",purpose:"Support fat loss and recovery without adding shoulder fatigue.",
+ exercises:[
+  ["treadmill",1,"20–35 min"],["iso",2,"20 sec"],["scap",2,"15"]
+ ]}
+};
+const WEEK=[
+ ["Monday","pull"],["Tuesday","legsA"],["Wednesday","recovery"],["Thursday","upperB"],["Friday","legsB"],["Saturday","conditioning"],["Sunday","recovery"]
+];
+
+</script>
+<script>
+
+const EMPTY={checkins:[],sets:[],body:[],completed:[],settings:{voice:true,rest:90}};
+const clone=x=>JSON.parse(JSON.stringify(x));
+function load(){try{return JSON.parse(localStorage.getItem("ryanfit_coach_v1"))||clone(EMPTY)}catch(e){return clone(EMPTY)}}
+let state=load(), activeWorkout=null, queue=[], exerciseIndex=0, setIndex=1, selectedSetPain=0, timer=null, seconds=90;
+const $=id=>document.getElementById(id);
+function save(){try{localStorage.setItem("ryanfit_coach_v1",JSON.stringify(state))}catch(e){}}
+function toast(msg="Saved"){const t=$("toast");t.textContent=msg;t.classList.add("show");setTimeout(()=>t.classList.remove("show"),1300)}
+function speak(text){
+ if(!state.settings.voice || !("speechSynthesis" in window))return;
+ speechSynthesis.cancel();
+ const u=new SpeechSynthesisUtterance(text);u.rate=.92;u.pitch=.95;u.volume=1;
+ const voices=speechSynthesis.getVoices();
+ const au=voices.find(v=>/en-AU/i.test(v.lang));if(au)u.voice=au;
+ speechSynthesis.speak(u);
+}
+function todayISO(){return new Date().toISOString().slice(0,10)}
+function scheduledId(){return WEEK[(new Date().getDay()+6)%7][1]}
+function renderHome(){
+ const d=new Date();$("todayDate").textContent=d.toLocaleDateString(undefined,{weekday:"long",day:"numeric",month:"long"});
+ const hour=d.getHours();$("coachGreeting").textContent=`Good ${hour<12?"morning":hour<18?"afternoon":"evening"}, Ryan.`;
+ const id=$("workoutSelect").value||scheduledId(), w=WORKOUTS[id];
+ $("workoutTitle").textContent=w.title;$("duration").textContent=w.duration;$("workoutPurpose").textContent=w.purpose;
+ const monday=new Date();monday.setDate(d.getDate()-((d.getDay()+6)%7));monday.setHours(0,0,0,0);
+ const thisWeekSets=state.sets.filter(x=>new Date(x.date)>=monday);
+ const days=new Set(thisWeekSets.map(x=>x.date.slice(0,10)));
+ $("weekSessions").textContent=days.size;$("weekSets").textContent=thisWeekSets.length;
+ if(state.body.length>1){const delta=state.body.at(-1).weight-state.body[0].weight;$("weightChange").textContent=(delta>0?"+":"")+delta.toFixed(1)+" kg"}else $("weightChange").textContent="—";
+ $("accountabilityMessage").textContent=days.size>=4?"You are building consistency. Protect the shoulder and keep the routine.":days.size?`You have logged ${days.size} training day${days.size===1?"":"s"} this week. The next session keeps momentum moving.`:"Start with one controlled session. Consistency begins with today's first set.";
+}
+function buildSelect(){
+ $("workoutSelect").innerHTML=WEEK.map(([day,id])=>`<option value="${id}">${day} · ${WORKOUTS[id].title}</option>`).join("");
+ $("workoutSelect").value=scheduledId();
+}
+$("pain").oninput=e=>$("painLabel").textContent=e.target.value;
+$("coachPlan").onclick=()=>{
+ const pain=+$("pain").value,range=$("range").value,energy=$("energy").value,sleep=$("sleep").value;
+ state.checkins.push({date:new Date().toISOString(),pain,range,energy,sleep});save();
+ let msg,cls="callout safe";
+ if(pain>=5){msg="No resisted shoulder work today. Use legs or gentle treadmill only, and arrange a physiotherapist or surgeon review if this is new or worsening.";cls="callout danger"}
+ else if(pain>=3||range==="below45"){msg="Keep cuff work isometric or extremely light and below the painful arc. No pressing, pulldowns, flyes or overhead work.";cls="callout caution"}
+ else{msg="Use the shoulder-rebuild session, but keep pain mild and do not progress load unless symptoms remain settled later today and tomorrow."}
+ $("coachAdvice").className=cls;$("coachAdvice").textContent=msg;$("coachBrief").textContent=msg;speak(msg);toast();
+};
+$("voiceToggle").onclick=()=>{state.settings.voice=!state.settings.voice;save();$("voiceToggle").textContent=state.settings.voice?"🔊":"🔇";toast(state.settings.voice?"Voice coach on":"Voice coach off");if(state.settings.voice)speak("Voice coach is on.")};
+$("workoutSelect").onchange=renderHome;
+$("startWorkout").onclick=()=>{
+ activeWorkout=$("workoutSelect").value;queue=WORKOUTS[activeWorkout].exercises.map(x=>[...x]);exerciseIndex=0;setIndex=1;
+ showPage("workoutPage");renderExercise();speak(`Today's session is ${WORKOUTS[activeWorkout].title}. Keep shoulder pain mild and movement controlled. Let's begin.`);
+};
+function renderExercise(){
+ const [id,sets,reps]=queue[exerciseIndex],m=MACHINES.find(x=>x.id===id);
+ $("exerciseCounter").textContent=`Exercise ${exerciseIndex+1} of ${queue.length} · Set ${setIndex} of ${sets}`;
+ $("exercisePhoto").src=m.photo;$("exerciseName").textContent=m.name;$("exerciseDose").textContent=`${sets} set${sets>1?"s":""} · ${reps}`;
+ $("exerciseCues").textContent=m.cues;$("exerciseSafety").textContent=m.safety;
+ $("exerciseWhy").textContent=WORKOUTS[activeWorkout].purpose;
+ $("coachCue").textContent=coachCue(m);
+ const previous=[...state.sets].reverse().find(x=>x.exercise===id);
+ $("lastResult").textContent=previous?`Last logged: ${previous.weight||"—"} kg × ${previous.reps||"—"} · shoulder ${previous.setPain}/10`:"No previous result yet. Start conservatively.";
+ $("setWeight").value=previous?.weight||"";$("setReps").value="";
+ selectedSetPain=0;document.querySelectorAll("[data-setpain]").forEach(b=>b.classList.remove("selected"));resetTimer();
+}
+function coachCue(m){
+ if(["er","iso","scap","serratus"].includes(m.id))return "This is control work, not a test. Finish with plenty in reserve.";
+ if(["row","arms"].includes(m.id))return "Keep the upper arm low and the shoulder quiet. Stop before compensation.";
+ if(["legpress","plateleg","abductor","glute"].includes(m.id))return "Use the strongest comfortable range without pelvic stretch or breath-holding.";
+ return "Smooth effort. Stay below symptoms and keep breathing.";
+}
+document.querySelectorAll("[data-setpain]").forEach(b=>b.onclick=()=>{selectedSetPain=+b.dataset.setpain;document.querySelectorAll("[data-setpain]").forEach(x=>x.classList.remove("selected"));b.classList.add("selected")});
+function resetTimer(){clearInterval(timer);timer=null;seconds=state.settings.rest||90;drawTimer();$("restButton").textContent="Start rest"}
+function drawTimer(){$("restTimer").textContent=String(Math.floor(seconds/60)).padStart(2,"0")+":"+String(seconds%60).padStart(2,"0")}
+$("restButton").onclick=()=>{
+ if(timer){clearInterval(timer);timer=null;$("restButton").textContent="Resume";return}
+ $("restButton").textContent="Pause";
+ timer=setInterval(()=>{seconds--;drawTimer();if(seconds===45)speak("Halfway through your rest.");if(seconds===10)speak("Ten seconds.");if(seconds<=0){clearInterval(timer);timer=null;$("restButton").textContent="Done";speak("Rest complete. Set up when ready.");navigator.vibrate?.([100,60,100])}},1000);
+};
+$("completeSet").onclick=()=>{
+ const [id,sets]=queue[exerciseIndex];
+ const entry={date:new Date().toISOString(),workout:activeWorkout,exercise:id,set:setIndex,weight:+$("setWeight").value||0,reps:+$("setReps").value||0,setPain:selectedSetPain};
+ state.sets.push(entry);save();
+ if(selectedSetPain>=5)speak("Stop this shoulder exercise. Move to a pain free alternative or finish shoulder loading for today.");
+ else if(selectedSetPain>=3)speak("Keep the same or reduce the load. Do not increase range.");
+ else speak("Set saved. Nice control.");
+ if(setIndex<sets){setIndex++;renderExercise();toast("Set saved")}
+ else if(exerciseIndex<queue.length-1){exerciseIndex++;setIndex=1;renderExercise();toast("Exercise complete")}
+ else finishWorkout();
+};
+$("occupied").onclick=()=>{
+ const item=queue.splice(exerciseIndex,1)[0];queue.push(item);
+ if(exerciseIndex>=queue.length)exerciseIndex=0;setIndex=1;renderExercise();speak("Moved to the end. Let's keep the session flowing.");toast("Moved to end");
+};
+$("exitWorkout").onclick=()=>{if(confirm("Exit this workout? Your completed sets stay saved.")){showPage("homePage");renderHome()}};
+function finishWorkout(){
+ state.completed.push({date:new Date().toISOString(),workout:activeWorkout});save();showPage("homePage");renderHome();
+ const msg="Workout complete. Good work. Check how the shoulder feels again in two to three hours and tomorrow morning.";speak(msg);$("coachBrief").textContent=msg;toast("Workout complete");
+}
+function renderPlan(){
+ $("planList").innerHTML=WEEK.map(([day,id])=>`<div class="plan-day"><h3>${day} · ${WORKOUTS[id].title}</h3><p class="muted">${WORKOUTS[id].purpose}</p><ul>${WORKOUTS[id].exercises.map(([eid,s,r])=>`<li>${MACHINES.find(m=>m.id===eid).name} — ${s} × ${r}</li>`).join("")}</ul></div>`).join("");
+}
+function renderMachines(q=""){
+ const list=MACHINES.filter(m=>(m.name+" "+m.muscle+" "+m.zone).toLowerCase().includes(q.toLowerCase()));
+ $("machineGrid").innerHTML=list.map(m=>`<div class="machine"><img src="${m.photo}" alt="${m.name}"><div><h4>${m.name}</h4><p>${m.zone} · ${m.muscle}</p><details><summary>Instructions</summary><p>${m.cues}</p><p>${m.safety}</p></details></div></div>`).join("");
+}
+$("machineSearch").oninput=e=>renderMachines(e.target.value);
+$("saveBody").onclick=()=>{const weight=+$("bodyWeight").value;if(!weight)return toast("Enter body weight");state.body.push({date:new Date().toISOString(),weight,waist:+$("waist").value||null});save();renderProgress();toast()};
+function renderProgress(){
+ if(state.body.length){const first=state.body[0],last=state.body.at(-1),change=last.weight-first.weight;$("progressSummary").innerHTML=`<div class="stats" style="margin-top:12px"><div><strong>${last.weight} kg</strong><span>latest</span></div><div><strong>${change>0?"+":""}${change.toFixed(1)} kg</strong><span>change</span></div><div><strong>${Math.max(0,7+change).toFixed(1)} kg</strong><span>goal remaining</span></div></div>`}else $("progressSummary").innerHTML='<p class="muted">No body check-ins yet.</p>';
+ const recent=state.checkins.slice(-7);$("shoulderSummary").textContent=recent.length?`Last ${recent.length} check-ins: average pain ${(recent.reduce((a,x)=>a+x.pain,0)/recent.length).toFixed(1)}/10. Track whether pain and comfortable elevation improve together.`:"No shoulder check-ins yet.";
+}
+$("exportData").onclick=()=>{const b=new Blob([JSON.stringify(state,null,2)],{type:"application/json"}),a=document.createElement("a");a.href=URL.createObjectURL(b);a.download="ryanfit-backup.json";a.click()};
+function showPage(id){document.querySelectorAll(".page,.nav").forEach(x=>x.classList.remove("active"));$(id).classList.add("active");document.querySelector(`.nav[data-page="${id}"]`)?.classList.add("active");window.scrollTo(0,0)}
+document.querySelectorAll(".nav").forEach(n=>n.onclick=()=>showPage(n.dataset.page));
+buildSelect();renderHome();renderPlan();renderMachines();renderProgress();$("voiceToggle").textContent=state.settings.voice?"🔊":"🔇";
+if("serviceWorker"in navigator)window.addEventListener("load",()=>navigator.serviceWorker.register("./sw.js").catch(()=>{}));
+
+</script>
 </body>
 </html>

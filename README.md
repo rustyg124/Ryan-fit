@@ -1,12 +1,8 @@
-# RyanFit Coach v1
+# RyanFit v1.1 — App Feel Repair
 
-Upload **all contents of this folder** to the root of the `Ryan-fit` repository, replacing existing files.
+Upload these files to the repository root and replace existing versions:
+index.html, manifest.webmanifest, sw.js, icon-192.png, icon-512.png, .nojekyll
 
-GitHub Pages remains configured as:
-- Branch: `main`
-- Folder: `/ (root)`
+Do not delete the existing JPG machine photos.
 
-Live site:
-https://rustyg124.github.io/Ryan-fit/
-
-After upload, refresh Safari once. If the Home Screen app remains old, remove and re-add it after the new site appears.
+This version inlines CSS and JavaScript into index.html, preventing folder upload issues.

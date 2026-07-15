@@ -1,5 +1,14 @@
-const CACHE='ryanfit-coach-v1.0.0';
-const ASSETS=["./", "./index.html", "./css/styles.css", "./js/data.js", "./js/app.js", "./manifest.webmanifest", "./icon-192.png", "./icon-512.png", "./assets/machines/treadmill.jpg", "./assets/machines/stairmill.jpg", "./assets/machines/leg_press.jpg", "./assets/machines/plate_leg_press.jpg", "./assets/machines/leg_extension.jpg", "./assets/machines/leg_curl.jpg", "./assets/machines/hip_abductor.jpg", "./assets/machines/glute_machine.jpg", "./assets/machines/calf_raise.jpg", "./assets/machines/functional_trainer.jpg", "./assets/machines/lat_pulldown.jpg", "./assets/machines/pec_deck.jpg", "./assets/machines/multi_press.jpg", "./assets/machines/arm_machine.jpg", "./assets/machines/assisted_chin.jpg", "./assets/machines/smith.jpg", "./assets/machines/bench.jpg"];
+const CACHE='ryanfit-v1-1-appfeel';
+const ASSETS=["./", "./index.html", "./manifest.webmanifest", "./icon-192.png", "./icon-512.png", "./treadmill.jpg", "./stairmill.jpg", "./leg_press.jpg", "./plate_leg_press.jpg", "./leg_extension.jpg", "./leg_curl.jpg", "./hip_abductor.jpg", "./glute_machine.jpg", "./calf_raise.jpg", "./functional_trainer.jpg", "./lat_pulldown.jpg", "./pec_deck.jpg", "./multi_press.jpg", "./arm_machine.jpg", "./assisted_chin.jpg", "./smith.jpg", "./bench.jpg"];
 self.addEventListener('install',e=>{e.waitUntil(caches.open(CACHE).then(c=>c.addAll(ASSETS)));self.skipWaiting()});
 self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k!==CACHE).map(k=>caches.delete(k)))));self.clients.claim()});
-self.addEventListener('fetch',e=>{if(e.request.method!=='GET')return;e.respondWith(fetch(e.request).then(r=>{const c=r.clone();caches.open(CACHE).then(cache=>cache.put(e.request,c));return r}).catch(()=>caches.match(e.request).then(c=>c||caches.match('./index.html'))))});
+self.addEventListener('fetch',e=>{
+  if(e.request.method!=='GET')return;
+  e.respondWith(
+    fetch(e.request,{cache:'no-store'}).then(r=>{
+      const copy=r.clone();
+      caches.open(CACHE).then(c=>c.put(e.request,copy));
+      return r;
+    }).catch(()=>caches.match(e.request).then(c=>c||caches.match('./index.html')))
+  );
+});
