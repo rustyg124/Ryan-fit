@@ -1,16 +1,21 @@
-# RyanFit v1.4.1 Voice Fix
+# RyanFit Genesis Alpha
 
-Upload and replace:
-- index.html
-- sw.js
-- manifest.webmanifest
-- icon-192.png
-- icon-512.png
-- .nojekyll
+This branch is the safe development version. It does **not** deploy over the live `main` app.
 
-Fixes:
-- System Default Voice is always available
-- iPhone voice list retries after user interaction
-- Voice works even if Safari exposes no named voices
-- Old saved settings are migrated
-- Full hands-free guidance defaults back to ON
+## Upload
+Upload the complete contents of this package to the `genesis` branch.
+
+## Automatic check
+Every push to `genesis` runs **Genesis Build Check** in GitHub Actions. A green tick means the React/TypeScript project compiled successfully.
+
+## Current Alpha scope
+- Persistent workout state
+- Resume after interruption
+- Start set / finish set / automatic rest
+- Previous weight and reps
+- Shoulder response per set
+- Actual Marleston machine photos
+- Basic voice coach with diagnostics
+- `Just Follow Me` workout flow
+
+GitHub Pages deployment is intentionally deferred until the Alpha build passes.
