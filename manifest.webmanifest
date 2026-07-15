@@ -1,11 +1,12 @@
 {
-  "name": "RyanFit \u2014 Plus Fitness Marleston",
+  "name": "RyanFit Coach",
   "short_name": "RyanFit",
+  "description": "Shoulder-aware visual and spoken gym coach.",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
-  "background_color": "#0d1116",
-  "theme_color": "#101418",
+  "background_color": "#0c1117",
+  "theme_color": "#0c1117",
   "icons": [
     {
       "src": "./icon-192.png",
