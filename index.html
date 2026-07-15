@@ -40,6 +40,12 @@ details{background:var(--card2);padding:11px;border-radius:12px;margin-top:9px}s
 .guide-status{display:flex;align-items:center;gap:8px;color:var(--muted);font-size:.82rem;margin-top:9px}
 .guide-dot{width:9px;height:9px;border-radius:50%;background:var(--accent);box-shadow:0 0 0 5px rgba(111,221,169,.12)}
 .setting-row{padding:10px 0;border-bottom:1px solid var(--line)}.setting-row:last-child{border-bottom:0}
+
+.set-control{margin-top:14px}
+#setTimer{font-size:2.7rem;font-variant-numeric:tabular-nums;text-align:center;margin:12px 0;color:var(--accent);font-weight:850}
+.countdown-overlay{position:fixed;inset:0;background:rgba(5,8,12,.88);display:none;align-items:center;justify-content:center;z-index:50}
+.countdown-overlay.show{display:flex}
+#countdownNumber{font-size:8rem;font-weight:900;color:var(--accent)}
 </style>
   <title>RyanFit Coach</title>
 </head>
@@ -47,7 +53,7 @@ details{background:var(--card2);padding:11px;border-radius:12px;margin-top:9px}s
 <div id="app">
   <header>
     <div><h1>RyanFit</h1><p>Coach • recover • rebuild</p></div>
-<span style="font-size:.72rem;color:#aeb9c7;background:#212a35;padding:6px 9px;border-radius:999px">v1.2</span>
+<span style="font-size:.72rem;color:#aeb9c7;background:#212a35;padding:6px 9px;border-radius:999px">v1.3</span>
     <button id="voiceToggle" class="icon-btn" aria-label="Toggle spoken coach">🔊</button>
   </header>
 
@@ -141,8 +147,13 @@ details{background:var(--card2);padding:11px;border-radius:12px;margin-top:9px}s
           <button data-setpain="3">😐 3–4</button>
           <button data-setpain="5">😣 5+</button>
         </div>
+        <div class="set-control">
+          <div id="setTimer">00:00</div>
+          <button id="startSet" class="primary full">Start set</button>
+          <button id="finishSet" class="secondary full" style="display:none">Finish set</button>
+        </div>
         <div id="restTimer">01:30</div>
-        <div class="two"><button id="restButton" class="secondary">Start rest</button><button id="completeSet" class="primary">Complete set</button></div>
+        <div class="two"><button id="restButton" class="secondary">Start rest</button><button id="skipRest" class="quiet">Skip rest</button></div>
         <button id="occupied" class="warning full">Machine occupied — move to end</button>
       </article>
     </section>
@@ -194,6 +205,7 @@ details{background:var(--card2);padding:11px;border-radius:12px;margin-top:9px}s
     <button class="nav" data-page="progressPage">Progress</button>
   </nav>
 </div>
+<div id="countdownOverlay" class="countdown-overlay"><div id="countdownNumber">3</div></div>
 <div id="toast">Saved</div>
 <script>
 
@@ -259,7 +271,7 @@ const WEEK=[
 const EMPTY={checkins:[],sets:[],body:[],completed:[],settings:{voice:true,rest:90,voiceName:"",voiceStyle:"calm",guideInterval:60,fullGuidance:true}};
 const clone=x=>JSON.parse(JSON.stringify(x));
 function load(){try{return JSON.parse(localStorage.getItem("ryanfit_coach_v1"))||clone(EMPTY)}catch(e){return clone(EMPTY)}}
-let state=load(), activeWorkout=null, queue=[], exerciseIndex=0, setIndex=1, selectedSetPain=0, timer=null, seconds=90;
+let state=load(), activeWorkout=null, queue=[], exerciseIndex=0, setIndex=1, selectedSetPain=0, timer=null, seconds=90, setTimerInt=null, setSeconds=0, setActive=false;
 const $=id=>document.getElementById(id);
 function save(){try{localStorage.setItem("ryanfit_coach_v1",JSON.stringify(state))}catch(e){}}
 function toast(msg="Saved"){const t=$("toast");t.textContent=msg;t.classList.add("show");setTimeout(()=>t.classList.remove("show"),1300)}
@@ -345,7 +357,7 @@ function renderExercise(){
  lastPrevious=previous||null;
  $("lastResult").textContent=previous?`Last logged: ${previous.weight||"—"} kg × ${previous.reps||"—"} · shoulder ${previous.setPain}/10`:"No previous result yet. Start conservatively.";
  $("setWeight").value=previous?.weight||"";$("setReps").value=previous?.reps||"";
- selectedSetPain=0;document.querySelectorAll("[data-setpain]").forEach(b=>b.classList.remove("selected"));resetTimer();
+ selectedSetPain=0;document.querySelectorAll("[data-setpain]").forEach(b=>b.classList.remove("selected"));resetTimer();resetSetTimer();
  exerciseStartedAt=Date.now();restartGuidance();
  const next=queue[exerciseIndex+1];const nextName=next?MACHINES.find(x=>x.id===next[0]).name:"the workout summary";
  speak(`Now: ${m.name}. Set ${setIndex} of ${sets}. Target ${reps}. After this, ${nextName}.`);
@@ -370,8 +382,9 @@ function guidanceMessage(){
  const [id,sets,reps]=queue[exerciseIndex],m=MACHINES.find(x=>x.id===id);
  const next=queue[exerciseIndex+1],nextName=next?MACHINES.find(x=>x.id===next[0]).name:"your workout finish";
  const elapsed=Math.max(1,Math.floor((Date.now()-exerciseStartedAt)/60000));
+ if(setActive)return `You are in set ${setIndex} of ${sets} on ${m.name}. Keep the movement controlled.`;
  if(timer)return `${seconds} seconds remain in your rest. Next is set ${setIndex} of ${sets} on ${m.name}.`;
- return `Minute ${elapsed}. You are on ${m.name}, set ${setIndex} of ${sets}, aiming for ${reps}. Coming next: ${nextName}. Tap complete set when finished.`;
+ return `You are ready for set ${setIndex} of ${sets} on ${m.name}, aiming for ${reps}. Coming next: ${nextName}. Press start set when ready.`;
 }
 function restartGuidance(){
  clearInterval(guideTimer);guideTimer=null;
@@ -379,23 +392,74 @@ function restartGuidance(){
  const ms=(state.settings.guideInterval||60)*1000;
  guideTimer=setInterval(()=>{if(document.getElementById("workoutPage").classList.contains("active"))speak(guidanceMessage())},ms);
 }
+
+function drawSetTimer(){
+ $("setTimer").textContent=String(Math.floor(setSeconds/60)).padStart(2,"0")+":"+String(setSeconds%60).padStart(2,"0");
+}
+function resetSetTimer(){
+ clearInterval(setTimerInt);setTimerInt=null;setSeconds=0;setActive=false;drawSetTimer();
+ $("startSet").style.display="block";$("finishSet").style.display="none";
+}
+function beginSetCountdown(){
+ if(setActive)return;
+ const overlay=$("countdownOverlay"),num=$("countdownNumber");
+ overlay.classList.add("show");
+ let n=3;num.textContent=n;speak("Three.");
+ const int=setInterval(()=>{
+   n--;
+   if(n>0){num.textContent=n;speak(String(n)+".")}
+   else{
+     clearInterval(int);num.textContent="GO";speak("Go.");
+     setTimeout(()=>overlay.classList.remove("show"),450);
+     setActive=true;setSeconds=0;drawSetTimer();
+     $("startSet").style.display="none";$("finishSet").style.display="block";
+     setTimerInt=setInterval(()=>{setSeconds++;drawSetTimer();if(setSeconds===30)speak("Thirty seconds.");if(setSeconds===60)speak("One minute.")},1000);
+   }
+ },800);
+}
 function resetTimer(){clearInterval(timer);timer=null;seconds=state.settings.rest||90;drawTimer();$("restButton").textContent="Start rest"}
 function drawTimer(){$("restTimer").textContent=String(Math.floor(seconds/60)).padStart(2,"0")+":"+String(seconds%60).padStart(2,"0")}
+
+function startRestAutomatically(nextExercise=false){
+ clearInterval(timer);timer=null;seconds=state.settings.rest||90;drawTimer();
+ $("restButton").textContent="Pause";
+ speak(`${nextExercise?"Next exercise is ready after this rest.":"Next set follows after this rest."} Rest for ${seconds} seconds.`);
+ timer=setInterval(()=>{
+   seconds--;drawTimer();
+   if(seconds===60)speak("One minute remains.");
+   if(seconds===45)speak("Forty five seconds.");
+   if(seconds===30)speak("Thirty seconds. Get ready.");
+   if(seconds===10)speak("Ten seconds.");
+   if(seconds<=0){
+     clearInterval(timer);timer=null;$("restButton").textContent="Done";
+     speak("Rest complete. Press start set when ready.");
+     navigator.vibrate?.([100,60,100]);
+   }
+ },1000);
+}
+$("skipRest").onclick=()=>{
+ clearInterval(timer);timer=null;seconds=0;drawTimer();$("restButton").textContent="Done";
+ speak("Rest skipped. Press start set when ready.");
+};
 $("restButton").onclick=()=>{
  if(timer){clearInterval(timer);timer=null;$("restButton").textContent="Resume";return}
  $("restButton").textContent="Pause";
  timer=setInterval(()=>{seconds--;drawTimer();if(seconds===60)speak("One minute remains.");if(seconds===45)speak("Forty five seconds. Coming up: the next set.");if(seconds===30)speak("Thirty seconds.");if(seconds===10)speak("Ten seconds. Get ready.");if(seconds<=0){clearInterval(timer);timer=null;$("restButton").textContent="Done";speak("Go. Start the set when ready.");navigator.vibrate?.([100,60,100])}},1000);
 };
-$("completeSet").onclick=()=>{
+$("startSet").onclick=beginSetCountdown;
+$("finishSet").onclick=()=>{
+ clearInterval(setTimerInt);setTimerInt=null;setActive=false;
  const [id,sets]=queue[exerciseIndex];
- const entry={date:new Date().toISOString(),workout:activeWorkout,exercise:id,set:setIndex,weight:+$("setWeight").value||0,reps:+$("setReps").value||0,setPain:selectedSetPain};
+ const entry={date:new Date().toISOString(),workout:activeWorkout,exercise:id,set:setIndex,weight:+$("setWeight").value||0,reps:+$("setReps").value||0,setPain:selectedSetPain,duration:setSeconds};
  state.sets.push(entry);save();
  if(selectedSetPain>=5)speak("Stop this shoulder exercise. Move to a pain free alternative or finish shoulder loading for today.");
- else if(selectedSetPain>=3)speak("Keep the same or reduce the load. Do not increase range.");
- else speak("Set saved. Nice control.");
- if(setIndex<sets){setIndex++;renderExercise();toast("Set saved")}
- else if(exerciseIndex<queue.length-1){exerciseIndex++;setIndex=1;renderExercise();toast("Exercise complete")}
- else finishWorkout();
+ else if(selectedSetPain>=3)speak("Set saved. Keep the same or reduce the load. Do not increase range.");
+ else speak("Set complete. Good control. Rest starts now.");
+ if(setIndex<sets){
+   setIndex++;renderExercise();startRestAutomatically();toast("Set saved");
+ }else if(exerciseIndex<queue.length-1){
+   exerciseIndex++;setIndex=1;renderExercise();startRestAutomatically(true);toast("Exercise complete");
+ }else finishWorkout();
 };
 $("occupied").onclick=()=>{
  const item=queue.splice(exerciseIndex,1)[0];queue.push(item);
