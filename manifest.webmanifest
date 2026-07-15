@@ -1,7 +1,6 @@
 {
   "name": "RyanFit \u2014 Plus Fitness Marleston",
   "short_name": "RyanFit",
-  "description": "Personal visual workout companion.",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
